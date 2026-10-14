@@ -1,0 +1,63 @@
+import json
+import urllib.request
+import urllib.parse
+
+print("===================================")
+print(" REAL-TIME WEATHER DATA DASHBOARD")
+print("===================================")
+
+city = input("Enter city name: ")
+
+try:
+    # Get city coordinates
+    params = urllib.parse.urlencode({
+        "name": city,
+        "count": 1,
+        "language": "en",
+        "format": "json"
+    })
+
+    url = "https://geocoding-api.open-meteo.com/v1/search?" + params
+
+    with urllib.request.urlopen(url, timeout=15) as response:
+        locations = json.loads(response.read().decode())
+
+    places = locations.get("results", [])
+
+    if not places:
+        print("City not found!")
+    else:
+        place = places[0]
+        lat = place["latitude"]
+        lon = place["longitude"]
+
+        # Fetch current weather
+        params = urllib.parse.urlencode({
+            "latitude": lat,
+            "longitude": lon,
+            "current": "temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m",
+            "timezone": "auto"
+        })
+
+        url = "https://api.open-meteo.com/v1/forecast?" + params
+
+        with urllib.request.urlopen(url, timeout=15) as response:
+            weather = json.loads(response.read().decode())
+
+        current = weather["current"]
+
+        print("\n----------- WEATHER REPORT -----------")
+        print("City:", place["name"])
+        print("Country:", place.get("country", "N/A"))
+        print("Temperature:", current["temperature_2m"], "°C")
+        print("Humidity:", current["relative_humidity_2m"], "%")
+        print("Rainfall:", current["precipitation"], "mm")
+        print("Wind Speed:", current["wind_speed_10m"], "km/h")
+        print("Reported Time:", current["time"])
+        print("--------------------------------------")
+        print("Weather report generated successfully!")
+
+except Exception as e:
+    print("Unable to fetch live weather data.")
+    print("Please check internet access.")
+    print("Details:", e)
